@@ -6,13 +6,10 @@ const bpo = require('./nosubir.js').bpo;
 const bdb = require('./nosubir.js').bdb;
 const bus = require('./nosubir.js').bus;
 const bpa = require('./nosubir.js').bpa;
-const { createWriteStream, FileReader } = require('fs');
-// axios para descargar las imagenes
-const axios = require('axios');
 
 const odoo = new Odoo({
   baseUrl: bur,
-  port: bpo, // see comments below regarding port option
+  port: bpo,
   db: bdb,
   username: bus,
   password: bpa,
@@ -31,16 +28,6 @@ async function main() {
         console.log('Connected to Odoo server.');
         console.log('AÑADIENDO TODOS LOS PRODUCTOS!!');
 
-        // hacer una funcion que reciba una imagen y la convierta en binari
-
-        async function convertirImagenEnBinario(imagen) {
-          const response = await axios.get(imagen, {
-            responseType: 'arraybuffer',
-          });
-          const buffer = Buffer.from(response.data, 'binary');
-          return buffer;
-        }
-
         //! -------------------------- añadir todos los productos --------------------------
         for (let i = 0; i < PRODUCTOSJSON.length; i++) {
           const product = await odoo.create('product.template', {
@@ -50,9 +37,7 @@ async function main() {
             description_purchase: PRODUCTOSJSON[i].descripcion,
             description_picking: PRODUCTOSJSON[i].descripcion,
             description: PRODUCTOSJSON[i].descripcion,
-            website_id: PRODUCTOSJSON[i].id,
             type: 'product',
-            image_1920: btoa(PRODUCTOSJSON[i].imagenes[0]),
           });
 
           console.log(`Product created with ID ${product}`);
@@ -64,12 +49,12 @@ async function main() {
         console.log('Connected to Odoo server.');
         console.log('ELIMINANDO TODOS LOS PRODUCTOS!!');
 
-        // mirar cuantos productos hay en la base de datos
+        // 1º mirar cuantos productos hay en la base de datos
         TOTAL_PRODUCTOS = await odoo.searchRead('product.template', {});
 
         console.log('en la bbdd hay ' + TOTAL_PRODUCTOS.length + ' productos');
 
-        // eliminar todos los productos
+        // 2º  eliminar todos los productos
         for (let i = 0; i < TOTAL_PRODUCTOS.length; i++) {
           const product = await odoo.delete(
             'product.template',
@@ -94,18 +79,7 @@ async function main() {
 
         break;
       case 4:
-        //! -------------------------- mostrar todos los productos --------------------------
-        await odoo.connect();
-        console.log('Connected to Odoo server.');
-        console.log('Mostrando TODOS los productos');
-
-        TOTAL_PRODUCTOS = await odoo.searchRead('product.template', {});
-
-        for (let i = 0; i < TOTAL_PRODUCTOS.length; i++) {
-          console.log(TOTAL_PRODUCTOS[i]);
-        }
-
-        break;
+      //! -------------------------- VACIO --------------------------
 
       case 0:
         salir = true;
@@ -183,6 +157,7 @@ async function main() {
 
 main();
 
+// ! -------------------------- FUNCIONES --------------------------
 // funcion para mostrar el menu y retorna la opcion elegida por el usuario desde la consola
 function mostrarMenu() {
   console.log(' | -------------------------- MENU -------------------------|');
