@@ -1,11 +1,14 @@
 const Odoo = require('odoo-await');
-const PRODUCTOSJSON = require('./productos.json');
+const PRODUCTOSJSON = require('../productos.json');
 const prompt = require('prompt-sync')();
 const bur = require('./nosubir.js').bur;
 const bpo = require('./nosubir.js').bpo;
 const bdb = require('./nosubir.js').bdb;
 const bus = require('./nosubir.js').bus;
 const bpa = require('./nosubir.js').bpa;
+const { createWriteStream, FileReader } = require('fs');
+// axios para descargar las imagenes
+const axios = require('axios');
 
 const odoo = new Odoo({
   baseUrl: bur,
@@ -28,39 +31,30 @@ async function main() {
         console.log('Connected to Odoo server.');
         console.log('AÑADIENDO TODOS LOS PRODUCTOS!!');
 
-        function convertUrlToBinary(url) {
-          // Crear un array de bytes para almacenar la URL en binario
-          const byteArray = [];
+        // hacer una funcion que reciba una imagen y la convierta en binari
 
-          // Convertir cada carácter de la URL a su valor ASCII y luego a binario
-          for (let i = 0; i < url.length; i++) {
-            const charCode = url.charCodeAt(i);
-            const binary = charCode.toString(2);
-
-            // Agregar ceros a la izquierda si el valor binario tiene menos de 8 dígitos
-            const paddedBinary = binary.padStart(8, '0');
-
-            // Agregar el valor binario al array de bytes
-            byteArray.push(paddedBinary);
-          }
-
-          // Convertir el array de bytes a una cadena binaria
-          const binaryUrl = byteArray.join(' ');
-
-          // Devolver la URL en formato binario
-          return binaryUrl;
+        async function convertirImagenEnBinario(imagen) {
+          const response = await axios.get(imagen, {
+            responseType: 'arraybuffer',
+          });
+          const buffer = Buffer.from(response.data, 'binary');
+          return buffer;
         }
 
         //! -------------------------- añadir todos los productos --------------------------
         for (let i = 0; i < PRODUCTOSJSON.length; i++) {
-          console.log(convertUrlToBinary(PRODUCTOSJSON[0].imagenes[0]));
           const product = await odoo.create('product.template', {
             name: `SKU ${PRODUCTOSJSON[i].SKU}`,
             list_price: PRODUCTOSJSON[i].precio.replace(',', '.'),
-            //image_1920: convertUrlToBinary('./images/108-preview-ymqj.jpg'),
-            weight: PRODUCTOSJSON[i].Peso.replace(',', '.').match(/\d+/g)[0],
-            volume: PRODUCTOSJSON[i].Volume.replace(',', '.').match(/\d+/g)[0],
+            weight: PRODUCTOSJSON[i].Peso.match(/\d+/g)[0],
+            description_purchase: PRODUCTOSJSON[i].descripcion,
+            description_picking: PRODUCTOSJSON[i].descripcion,
+            description: PRODUCTOSJSON[i].descripcion,
+            website_id: PRODUCTOSJSON[i].id,
+            type: 'product',
+            image_1920: btoa(PRODUCTOSJSON[i].imagenes[0]),
           });
+
           console.log(`Product created with ID ${product}`);
         }
         break;
@@ -87,6 +81,7 @@ async function main() {
         break;
 
       case 3:
+        //! -------------------------- mostrar todos los productos --------------------------
         await odoo.connect();
         console.log('Connected to Odoo server.');
         console.log('Mostrando TODOS los productos');
@@ -99,8 +94,19 @@ async function main() {
 
         break;
       case 4:
-        cantidadProductosEnLaBaseDeDatos();
+        //! -------------------------- mostrar todos los productos --------------------------
+        await odoo.connect();
+        console.log('Connected to Odoo server.');
+        console.log('Mostrando TODOS los productos');
+
+        TOTAL_PRODUCTOS = await odoo.searchRead('product.template', {});
+
+        for (let i = 0; i < TOTAL_PRODUCTOS.length; i++) {
+          console.log(TOTAL_PRODUCTOS[i]);
+        }
+
         break;
+
       case 0:
         salir = true;
         console.log('Saliento del programa');
