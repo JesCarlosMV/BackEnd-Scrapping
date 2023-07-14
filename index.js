@@ -32,7 +32,6 @@ async function main() {
 
         //! -------------------------- añadir todos los productos --------------------------
 
-        // funcion para
         for (let i = 0; i < PRODUCTOSJSON.length; i++) {
           // cambiar las url de las imagenes por base64
           let imagenes = [];
@@ -61,11 +60,12 @@ async function main() {
                 0,
                 0,
                 {
-                  name: `SKU ${PRODUCTOSJSON[i].SKU}`,
+                  name: `REF ${PRODUCTOSJSON[i].SKU}`,
                   image_1920: imagenes[0],
-                  image_128: imagenes[1],
-                  image_512: imagenes[2],
-                  image_256: imagenes[3],
+                  image_1024: imagenes[1],
+                  image_128: imagenes[2],
+                  image_512: imagenes[3],
+                  image_256: imagenes[4],
                 },
               ],
             ],
@@ -73,25 +73,25 @@ async function main() {
 
           console.log(newProduct);
 
-          // subir las imagenes al directorio de odoo
-          const imagen1920 = await odoo.create('ir.attachment', {
-            name: `SKU ${PRODUCTOSJSON[i].SKU}`,
-            datas: imagenes[0],
-            res_model: 'product.template',
-            res_id: 1,
-            type: 'binary',
-          });
+          // // subir las imagenes al directorio de odoo
+          // const imagen1920 = await odoo.create('ir.attachment', {
+          //   name: `SKU ${PRODUCTOSJSON[i].SKU}`,
+          //   datas: imagenes[0],
+          //   res_model: 'product.template',
+          //   res_id: 1,
+          //   type: 'binary',
+          // });
 
-          const imagen128 = await odoo.create('ir.attachment', {
-            name: `SKU ${PRODUCTOSJSON[i].SKU}`,
-            datas: imagenes[1],
-            res_model: 'product.template',
-            res_id: 1,
-            type: 'binary',
-          });
+          // const imagen128 = await odoo.create('ir.attachment', {
+          //   name: `SKU ${PRODUCTOSJSON[i].SKU}`,
+          //   datas: imagenes[1],
+          //   res_model: 'product.template',
+          //   res_id: 1,
+          //   type: 'binary',
+          // });
 
-          console.log(`Imagen1920 created with ID ${imagen1920}`);
-          console.log(`Imagen128 created with ID ${imagen128}`);
+          // console.log(`Imagen1920 created with ID ${imagen1920}`);
+          // console.log(`Imagen128 created with ID ${imagen128}`);
 
           // añadir el producto en la base de datos
           const product = await odoo.create('product.template', newProduct);
