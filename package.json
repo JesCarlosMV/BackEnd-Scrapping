@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "base-64": "^1.0.0",
     "odoo-await": "^3.3.2",
     "prompt-sync": "^4.2.0"
   }

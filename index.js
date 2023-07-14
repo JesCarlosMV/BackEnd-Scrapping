@@ -6,6 +6,8 @@ const bpo = require('./nosubir.js').bpo;
 const bdb = require('./nosubir.js').bdb;
 const bus = require('./nosubir.js').bus;
 const bpa = require('./nosubir.js').bpa;
+const axios = require('axios');
+const base64 = require('base-64');
 
 const odoo = new Odoo({
   baseUrl: bur,
@@ -29,19 +31,105 @@ async function main() {
         console.log('AÑADIENDO TODOS LOS PRODUCTOS!!');
 
         //! -------------------------- añadir todos los productos --------------------------
+
+        // funcion para
         for (let i = 0; i < PRODUCTOSJSON.length; i++) {
-          const product = await odoo.create('product.template', {
+          // cambiar las url de las imagenes por base64
+          let imagenes = [];
+
+          for (let j = 0; j < PRODUCTOSJSON[i].imagenes.length; j++) {
+            const response = await axios.get(PRODUCTOSJSON[i].imagenes[j], {
+              responseType: 'arraybuffer',
+            });
+            const base64String = Buffer.from(response.data, 'binary').toString(
+              'base64'
+            );
+            imagenes.push(base64String);
+          }
+
+          const newProduct = {
             name: `SKU ${PRODUCTOSJSON[i].SKU}`,
             list_price: PRODUCTOSJSON[i].precio.replace(',', '.'),
             weight: PRODUCTOSJSON[i].Peso.match(/\d+/g)[0],
             description_purchase: PRODUCTOSJSON[i].descripcion,
-            description_picking: PRODUCTOSJSON[i].descripcion,
-            description: PRODUCTOSJSON[i].descripcion,
-            type: 'product',
+            image_1920: imagenes[0],
+            image_128: imagenes[1],
+            image_512: imagenes[2],
+            image_256: imagenes[3],
+            product_template_image_ids: [
+              [
+                0,
+                0,
+                {
+                  name: `SKU ${PRODUCTOSJSON[i].SKU}`,
+                  image_1920: imagenes[0],
+                  image_128: imagenes[1],
+                  image_512: imagenes[2],
+                  image_256: imagenes[3],
+                },
+              ],
+            ],
+          };
+
+          console.log(newProduct);
+
+          // subir las imagenes al directorio de odoo
+          const imagen1920 = await odoo.create('ir.attachment', {
+            name: `SKU ${PRODUCTOSJSON[i].SKU}`,
+            datas: imagenes[0],
+            res_model: 'product.template',
+            res_id: 1,
+            type: 'binary',
           });
 
+          const imagen128 = await odoo.create('ir.attachment', {
+            name: `SKU ${PRODUCTOSJSON[i].SKU}`,
+            datas: imagenes[1],
+            res_model: 'product.template',
+            res_id: 1,
+            type: 'binary',
+          });
+
+          console.log(`Imagen1920 created with ID ${imagen1920}`);
+          console.log(`Imagen128 created with ID ${imagen128}`);
+
+          // añadir el producto en la base de datos
+          const product = await odoo.create('product.template', newProduct);
           console.log(`Product created with ID ${product}`);
+
+          // // mostrar las imagenes del producto desde el directorio donde guarda odoo las imagenes
+          // const imagenesProductoOdoo = await odoo.searchRead(
+          //   'product.template',
+          //   {
+          //     fields: ['image_1920', 'image_1024', 'image_512', 'image_256'],
+          //     domain: [['id', '=', product]],
+          //   }
+          // );
+
+          // console.log(imagenesProductoOdoo[0]);
+
+          // añadir el array de imagenes al producto
+
+          // insertar el producto en la base de datos
+          // const product = await odoo.create('product.template', newProduct);
+          // console.log(`Product created with ID ${product}`);
+          // const product = await odoo.create('product.template', {
+          //   name: `SKU ${PRODUCTOSJSON[i].SKU}`,
+          //   list_price: PRODUCTOSJSON[i].precio.replace(',', '.'),
+          //   weight: PRODUCTOSJSON[i].Peso.match(/\d+/g)[0],
+          //   description_purchase: PRODUCTOSJSON[i].descripcion,
+          //   description_picking: PRODUCTOSJSON[i].descripcion,
+          //   description: PRODUCTOSJSON[i].descripcion,
+          //   is_published: true,
+          //   type: 'product',
+          //   sale_ok: true,
+          //   purchase_ok: true,
+          //   categ_id: 1,
+          //   image_1920: PRODUCTOSJSON[i].imagenes[0],
+          // });
+          // console.log(`Product created with ID ${product}`);
         }
+
         break;
       case 2:
         //! -------------------------- eliminar todos los productos --------------------------
@@ -66,21 +154,33 @@ async function main() {
         break;
 
       case 3:
-        //! -------------------------- mostrar todos los productos --------------------------
+        //! -------------------------- mostrar todos los productos con su id --------------------------
         await odoo.connect();
+
         console.log('Connected to Odoo server.');
-        console.log('Mostrando TODOS los productos');
+        console.log(' \n \t MOSTRANDO TODOS LOS PRODUCTOS CON SU ID!!');
 
         TOTAL_PRODUCTOS = await odoo.searchRead('product.template', {});
 
         for (let i = 0; i < TOTAL_PRODUCTOS.length; i++) {
+          console.log(`\n \t id => \n \t ${TOTAL_PRODUCTOS[i].id}`);
           console.log(TOTAL_PRODUCTOS[i]);
         }
 
+        console.log('en la bbdd hay ' + TOTAL_PRODUCTOS.length + ' productos');
         break;
       case 4:
-      //! -------------------------- VACIO --------------------------
+        //! -------------------------- mostrar todas las fotos del directorio de odoo --------------------------
+        // conectar odoo y mostrar la base de datos
+        await odoo.connect();
+        console.log('Connected to Odoo server.');
 
+        TOTAL_PRODUCTOS = await odoo.searchRead('product.template', {});
+
+        break;
+
+      case 5:
+        break;
       case 0:
         salir = true;
         console.log('Saliento del programa');

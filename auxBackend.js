@@ -4,7 +4,13 @@ const buffersToBase64 = (buffers) => {
   const base64 = buffer.toString('base64');
   return base64;
 };
+// funcion que recibe un buffer y retorna el buffer convertido a base64
+const bufferToBase64 = (buffer) => {
+  const base64 = buffer.toString('base64');
+  return base64;
+};
 
 module.exports = {
   buffersToBase64,
+  bufferToBase64,
 };
