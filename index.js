@@ -46,88 +46,49 @@ async function main() {
             imagenes.push(base64String);
           }
 
+          // subimos cada imagen a la base de datos y guardamos en el array los id de las imagenes
+          // para pasarlos al producto que vamos a crear
+          let productImage = [];
+          for (let k = 0; k < imagenes.length; k++) {
+            const newImage = {
+              name: PRODUCTOSJSON[i].SKU + ' ' + k,
+              image_1920: imagenes[k],
+            };
+            const image = await odoo.create('product.image', newImage);
+            productImage.push(image);
+          }
+
+          // CREAMOS EL PRODUCTO
           const newProduct = {
-            name: `SKU ${PRODUCTOSJSON[i].SKU}`,
-            list_price: PRODUCTOSJSON[i].precio.replace(',', '.'),
-            weight: PRODUCTOSJSON[i].Peso.match(/\d+/g)[0],
+            // el id del producto es el mismo que el id de la tabla de imagenes
+            id: PRODUCTOSJSON[i].id,
+            name: PRODUCTOSJSON[i].SKU,
+            list_price: PRODUCTOSJSON[i].precio
+              ? PRODUCTOSJSON[i].precio.replace(',', '.')
+              : 0,
+            standard_price: PRODUCTOSJSON[i].precio
+              ? PRODUCTOSJSON[i].precio.replace(',', '.')
+              : 0,
+            // weight es el peso del producto sin "kg"
+            weight: PRODUCTOSJSON[i].Peso
+              ? PRODUCTOSJSON[i].Peso.replace('Kg', '').replace(',', '.')
+              : 0,
+            volume: PRODUCTOSJSON[i].Volume
+              ? PRODUCTOSJSON[i].Volume.replace('m³', '').replace(',', '.')
+              : 0,
             description_purchase: PRODUCTOSJSON[i].descripcion,
             image_1920: imagenes[0],
-            image_128: imagenes[1],
-            image_512: imagenes[2],
-            image_256: imagenes[3],
-            product_template_image_ids: [
-              [
-                0,
-                0,
-                {
-                  name: `REF ${PRODUCTOSJSON[i].SKU}`,
-                  image_1920: imagenes[0],
-                  image_1024: imagenes[1],
-                  image_128: imagenes[2],
-                  image_512: imagenes[3],
-                  image_256: imagenes[4],
-                },
-              ],
-            ],
+            //a prouct_template_image_ids le pasamos el 6 que es el id de la tabla de imagenes
+            // false porque no queremos que se borren las imagenes que ya tiene el producto
+            // y el array de los id de las imagenes que hemos subido
+            product_template_image_ids: [[6, false, productImage]],
           };
 
           console.log(newProduct);
 
-          // // subir las imagenes al directorio de odoo
-          // const imagen1920 = await odoo.create('ir.attachment', {
-          //   name: `SKU ${PRODUCTOSJSON[i].SKU}`,
-          //   datas: imagenes[0],
-          //   res_model: 'product.template',
-          //   res_id: 1,
-          //   type: 'binary',
-          // });
-
-          // const imagen128 = await odoo.create('ir.attachment', {
-          //   name: `SKU ${PRODUCTOSJSON[i].SKU}`,
-          //   datas: imagenes[1],
-          //   res_model: 'product.template',
-          //   res_id: 1,
-          //   type: 'binary',
-          // });
-
-          // console.log(`Imagen1920 created with ID ${imagen1920}`);
-          // console.log(`Imagen128 created with ID ${imagen128}`);
-
           // añadir el producto en la base de datos
           const product = await odoo.create('product.template', newProduct);
           console.log(`Product created with ID ${product}`);
-
-          // // mostrar las imagenes del producto desde el directorio donde guarda odoo las imagenes
-          // const imagenesProductoOdoo = await odoo.searchRead(
-          //   'product.template',
-          //   {
-          //     fields: ['image_1920', 'image_1024', 'image_512', 'image_256'],
-          //     domain: [['id', '=', product]],
-          //   }
-          // );
-
-          // console.log(imagenesProductoOdoo[0]);
-
-          // añadir el array de imagenes al producto
-
-          // insertar el producto en la base de datos
-          // const product = await odoo.create('product.template', newProduct);
-          // console.log(`Product created with ID ${product}`);
-          // const product = await odoo.create('product.template', {
-          //   name: `SKU ${PRODUCTOSJSON[i].SKU}`,
-          //   list_price: PRODUCTOSJSON[i].precio.replace(',', '.'),
-          //   weight: PRODUCTOSJSON[i].Peso.match(/\d+/g)[0],
-          //   description_purchase: PRODUCTOSJSON[i].descripcion,
-          //   description_picking: PRODUCTOSJSON[i].descripcion,
-          //   description: PRODUCTOSJSON[i].descripcion,
-          //   is_published: true,
-          //   type: 'product',
-          //   sale_ok: true,
-          //   purchase_ok: true,
-          //   categ_id: 1,
-          //   image_1920: PRODUCTOSJSON[i].imagenes[0],
-          // });
-          // console.log(`Product created with ID ${product}`);
         }
 
         break;
